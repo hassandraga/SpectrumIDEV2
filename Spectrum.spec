@@ -5,7 +5,7 @@ block_cipher = None
 
 
 a = Analysis(
-    ['MainWin.py'],
+    ['Spectrum.py'],
     pathex=[],
     binaries=[],
     datas=[('icons','icons'),('example','example'),('fonts','fonts')],
