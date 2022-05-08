@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QMainWindow, QApplication, QWidget, QToolBar, QVBoxLayout, QTabWidget, \
     QDockWidget, QFileDialog, QMessageBox, QStatusBar, QLabel
-from PyQt6.QtGui import QIcon, QFont, QAction
-from PyQt6.QtCore import Qt, QProcess, QThread, QObject, QTimer
+from PyQt6.QtGui import QIcon, QFont, QAction, QFontDatabase
+from PyQt6.QtCore import Qt, QProcess, QTimer
 from tempfile import gettempdir
 import CodeEditor
 import Console
@@ -22,6 +22,7 @@ class MainWin(QMainWindow):
         self.resize(1280, 720)
         self.setWindowTitle("طيف")
         self.setWindowIcon(QIcon('./icons/TaifLogo.svg'))
+        self.setFontsDataBase()
 
         self.centerWidget = QWidget(self)
 
@@ -55,7 +56,7 @@ class MainWin(QMainWindow):
         self._Actions()
         self._MenuBar()
         self._toolBar()
-        self.stateBar()
+        self.staBar()
 
         ########################################المتغيرات########################################
 
@@ -65,6 +66,11 @@ class MainWin(QMainWindow):
         self.res = 1
 
         #########################################################################################
+
+    def setFontsDataBase(self):
+        fonts = ['fonts/AlususMono.otf', 'fonts/Tajawal-Black.ttf', 'fonts/Tajawal-Bold.ttf', 'fonts/Tajawal-Regular.ttf']
+        for font in fonts:
+            QFontDatabase.addApplicationFont(font)
 
     def _MenuBar(self):
         menuBar = self.menuBar()
@@ -118,7 +124,7 @@ class MainWin(QMainWindow):
         self.WebuiExampleAction.setStatusTip('فتح مثال "تطبيق واجهة ويب.alif"')
         self.WebuiExampleAction.triggered.connect(self.openWebuiExample)
 
-    def stateBar(self):
+    def staBar(self):
         self.stateBar = QStatusBar()
         self.setStatusBar(self.stateBar)
         self.stateBar.addPermanentWidget(self.charCount.char_count_lable)
@@ -305,6 +311,7 @@ class CharCont:
 
 
 if __name__ == "__main__":
+
     app = QApplication(sys.argv)
     app.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
     app.setFont(QFont('Tajawal', 10))
