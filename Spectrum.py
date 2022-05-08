@@ -104,7 +104,7 @@ class MainWin(QMainWindow):
         self.compileAction = QAction(QIcon('./icons/compile_black.svg'), 'ترجمة', self)
         self.compileAction.setShortcut('Ctrl+f2')
         self.compileAction.setStatusTip('بناء شفرة التبويب الحالي... ')
-        self.compileAction.triggered.connect(self.runThreadTask)
+        self.compileAction.triggered.connect(self.codeCompile)
         self.runAction = QAction(QIcon('./icons/run_arrow.svg'), 'تشغيل', self)
         self.runAction.setShortcut('Ctrl+f10')
         self.runAction.setStatusTip('تنفيذ الشفرة التي تم بناؤها... ')
@@ -200,24 +200,9 @@ class MainWin(QMainWindow):
         msgBox.exec()
         return msgBox.result()
 
-    def runThreadTask(self):
-        self.thread = QThread()
-        self.worker = ThreadWorker(self)
-        self.worker.moveToThread(self.thread)
-        # self.process = QProcess()
-        # self.process.moveToThread(self.thread)
-        self.thread.started.connect(self.worker.run)
-        # self.thread.finished.connect(self.thread.quit)
-        # self.thread.finished.connect(self.worker.deleteLater)
-        # self.thread.finished.connect(self.thread.deleteLater)
-        self.thread.start()
-        self.compileAction.setEnabled(False)
-        self.thread.finished.connect(lambda: self.compileAction.setEnabled(True))
-
     def codeCompile(self):
-        # self.timer = QTimer()
-        # self.timer.moveToThread(self.thread)
-        # self.timer.start(60000)
+        self.timer = QTimer()
+        self.timer.start(60000)
         self.stateBar.showMessage('جاري ترجمة الشفرة...')
         code = self.tabWin.currentWidget().toPlainText()
         self.tempFile = gettempdir()
@@ -232,10 +217,9 @@ class MainWin(QMainWindow):
         self.process.kill()
 
         if self.res == 0:
-            self.stateBar.showMessage('نجحت الترجمة...!', 3000)
-            # self.remaining_time = self.timer.remainingTime()
-            # buildTime = (60000 - self.remaining_time) / 1000
-            # self.resultWin.setPlainText(f"[انتهى البناء خلال: {buildTime} ثانية]")
+            self.remaining_time = self.timer.remainingTime()
+            buildTime = (60000 - self.remaining_time) / 1000
+            self.resultWin.setPlainText(f"[انتهى البناء خلال: {buildTime} ثانية]")
 
         if self.res == 1:
             log = os.path.join(self.tempFile, "temp.alif.log")
@@ -258,7 +242,6 @@ class MainWin(QMainWindow):
                 self.process.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
                 self.process.readyRead.connect(self.ifReadReady)
                 self.process.start(os.path.join(self.tempFile, "temp.exe"))
-            # self.isProcess = True
         else:
             self.resultWin.appendPlainText("قم ببناء الشفرة أولاً")
 
@@ -299,21 +282,6 @@ class MainWin(QMainWindow):
         stdout = stdout[2].strip('v')
         stdout = f'ألف {stdout}'
         self.stateBar.addPermanentWidget(QLabel(stdout))
-
-
-class ThreadWorker(QObject):
-    # finished = pyqtSignal()
-
-    def __init__(self, MainWin):
-        super(ThreadWorker, self).__init__()
-        self.mainwin = MainWin
-
-    def run(self):
-        self.mainwin.codeCompile()
-        self.mainwin.process.terminate()
-        self.thread().quit()
-        self.deleteLater()
-        # self.finished.emit()
 
 
 class CharCont:
