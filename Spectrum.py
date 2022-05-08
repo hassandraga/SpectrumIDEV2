@@ -279,7 +279,7 @@ class MainWin(QMainWindow):
 
     def openWebuiExample(self):
         plain_text_example = CodeEditor.CodeEditor()
-        self.tabWin.addTab(plain_text_example, 'جمع.alif')
+        self.tabWin.addTab(plain_text_example, 'تطبيق واجهة ويب.alif')
         self.tabWin.setCurrentWidget(plain_text_example)
         with open("./example/تطبيق واجهة ويب.alif", "r", encoding="utf-8") as example:
             exampleRead = example.read()
