@@ -8,7 +8,7 @@ a = Analysis(
     ['Spectrum.py'],
     pathex=[],
     binaries=[],
-    datas=[('icons','icons'),('example','example'),('fonts','fonts')],
+    datas=[('icons','icons'),('example','example'),('fonts','fonts'),('ui.html','.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

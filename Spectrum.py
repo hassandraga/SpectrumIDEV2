@@ -9,8 +9,7 @@ import sys
 import os
 
 try:
-    from ctypes import windll  # Only exists on Windows.
-
+    from ctypes import windll
     myappid = 'com.Shadow.SpectrumIDE.V2'
     windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 except ImportError:
@@ -63,7 +62,6 @@ class MainWin(QMainWindow):
 
         self.filePath = ''
         self.tabName = []
-        # self.isProcess = False
         self.res = 1
 
         #########################################################################################
@@ -221,11 +219,11 @@ class MainWin(QMainWindow):
     @pyqtSlot(int, float)
     def codeCompile(self, res : int, build_time: float):
         self.temp_file = gettempdir()
+        self.res = res
 
         if res == 0:
             self.resultWin.setPlainText(f"[انتهى البناء خلال: {build_time} ثانية]")
-
-        if res == 1:
+        elif res == 1:
             log = os.path.join(self.temp_file, "temp.alif.log")
             logOpen = open(log, "r", encoding="utf-8")
             self.resultWin.setPlainText(logOpen.read())
@@ -234,26 +232,23 @@ class MainWin(QMainWindow):
             self.resultWin.setPlainText("تحقق من أن لغة ألف 3 مثبتة بشكل صحيح")
 
     def runCode(self):
-        # self.startTime = time()
         if self.res == 0:
             if sys.platform == "linux":
                 self.process = QProcess()
                 self.process.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
                 self.process.readyRead.connect(self.ifReadReady)
-                self.process.start(os.path.join(self.tempFile, "./temp"))
+                self.process.start(os.path.join(self.temp_file, "./temp"))
             else:
                 self.process = QProcess()
                 self.process.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
                 self.process.readyRead.connect(self.ifReadReady)
-                self.process.start(os.path.join(self.tempFile, "temp.exe"))
+                self.process.start(os.path.join(self.temp_file, "temp.exe"))
         else:
             self.resultWin.appendPlainText("قم ببناء الشفرة أولاً")
 
     def ifReadReady(self):
         # self.resultWin.setReadOnly(False)
         self.resultWin.appendPlainText(str(self.process.readAll(), "utf8"))
-        # runTime = round(time() - self.startTime, 3)
-        # self.resultWin.appendPlainText(f"\n[انتهى التنفيذ خلال: {runTime} ثانية]")
 
     def openAddExample(self):
         plain_text_example = CodeEditor.CodeEditor()
@@ -298,7 +293,6 @@ class CompileThread(QObject):
         timer = QTimer()
         timer.start(60000)
 
-        mainWin.stateBar.showMessage('جاري ترجمة الشفرة...')
         code = mainWin.tabWin.currentWidget().toPlainText()
         temp_file = gettempdir()
 
