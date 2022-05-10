@@ -7,17 +7,16 @@
 
   
 طريقة التتبيث 
- 
-اولا قم بتثبيت الخطوط المرفقة
+
 
 <div dir=ltr>
 
 ```bash
 # استنساخ المشروع من جت هب
-git clone https://github.com/alifcommunity/SpectrumIDE
+git clone https://github.com/alifcommunity/SpectrumIDEV2
 
 # تغيير دليل العمل الحالي
-cd SpectrumIDE
+cd SpectrumIDEV2
 ```
 <div dir="rtl">
 إنشاء بيئة افتراضية (اختياري)
@@ -36,8 +35,7 @@ source venv/bin/activate
 <div dir="rtl">
 
 تنزيل المكاتب
- 
- 
+
 <div dir="ltr">
 
 ```bash
@@ -45,12 +43,11 @@ pip3 install -r requirements.txt
 ```
 <div dir="rtl">
 تنفيذ
- 
- 
-<div dir=ltr>
+<div dir="ltr">
  
 ```bash
 python Spectrum.py
 ```
+
 <div dir="rtl">
  

@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QMainWindow, QApplication, QWidget, QToolBar, QVBoxLayout, QTabWidget, \
     QDockWidget, QFileDialog, QMessageBox, QStatusBar, QLabel
 from PyQt6.QtGui import QIcon, QFont, QAction, QFontDatabase
-from PyQt6.QtCore import Qt, QProcess, QTimer
+from PyQt6.QtCore import Qt, QProcess, QTimer, QObject, pyqtSignal, pyqtSlot, QThread
 from tempfile import gettempdir
 import CodeEditor
 import Console
@@ -10,6 +10,7 @@ import os
 
 try:
     from ctypes import windll  # Only exists on Windows.
+
     myappid = 'com.Shadow.SpectrumIDE.V2'
     windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 except ImportError:
@@ -68,7 +69,8 @@ class MainWin(QMainWindow):
         #########################################################################################
 
     def setFontsDataBase(self):
-        fonts = ['fonts/AlususMono.otf', 'fonts/Tajawal-Black.ttf', 'fonts/Tajawal-Bold.ttf', 'fonts/Tajawal-Regular.ttf']
+        fonts = ['fonts/AlususMono.otf', 'fonts/Tajawal-Black.ttf', 'fonts/Tajawal-Bold.ttf',
+                 'fonts/Tajawal-Regular.ttf']
         for font in fonts:
             QFontDatabase.addApplicationFont(font)
 
@@ -110,7 +112,7 @@ class MainWin(QMainWindow):
         self.compileAction = QAction(QIcon('./icons/compile_black.svg'), 'ترجمة', self)
         self.compileAction.setShortcut('Ctrl+f2')
         self.compileAction.setStatusTip('بناء شفرة التبويب الحالي... ')
-        self.compileAction.triggered.connect(self.codeCompile)
+        self.compileAction.triggered.connect(self.compileThreadTask)
         self.runAction = QAction(QIcon('./icons/run_arrow.svg'), 'تشغيل', self)
         self.runAction.setShortcut('Ctrl+f10')
         self.runAction.setStatusTip('تنفيذ الشفرة التي تم بناؤها... ')
@@ -206,33 +208,29 @@ class MainWin(QMainWindow):
         msgBox.exec()
         return msgBox.result()
 
-    def codeCompile(self):
-        self.timer = QTimer()
-        self.timer.start(60000)
-        self.stateBar.showMessage('جاري ترجمة الشفرة...')
-        code = self.tabWin.currentWidget().toPlainText()
-        self.tempFile = gettempdir()
+    def compileThreadTask(self):
+        self.compile_thread = CompileThread()
+        self.thread = QThread()
+        self.compile_thread.moveToThread(self.thread)
+        self.thread.started.connect(self.compile_thread.run)
+        self.compile_thread.result_signal.connect(self.codeCompile)
+        self.thread.start()
+        self.compileAction.setEnabled(False)
+        self.thread.finished.connect(lambda: self.compileAction.setEnabled(True))
 
-        with open(os.path.join(self.tempFile, "temp.alif"), "w", encoding="utf-8") as temporaryFile:
-            temporaryFile.write(code)
-            temporaryFile.close()
+    @pyqtSlot(int, float)
+    def codeCompile(self, res : int, build_time: float):
+        self.temp_file = gettempdir()
 
-        self.process = QProcess()
-        alifCodeCompile = os.path.join(self.tempFile, "temp.alif")
-        self.res = self.process.execute("alif", [alifCodeCompile])
-        self.process.kill()
+        if res == 0:
+            self.resultWin.setPlainText(f"[انتهى البناء خلال: {build_time} ثانية]")
 
-        if self.res == 0:
-            self.remaining_time = self.timer.remainingTime()
-            buildTime = (60000 - self.remaining_time) / 1000
-            self.resultWin.setPlainText(f"[انتهى البناء خلال: {buildTime} ثانية]")
-
-        if self.res == 1:
-            log = os.path.join(self.tempFile, "temp.alif.log")
+        if res == 1:
+            log = os.path.join(self.temp_file, "temp.alif.log")
             logOpen = open(log, "r", encoding="utf-8")
             self.resultWin.setPlainText(logOpen.read())
             logOpen.close()
-        elif self.res == -2:
+        elif res == -2:
             self.resultWin.setPlainText("تحقق من أن لغة ألف 3 مثبتة بشكل صحيح")
 
     def runCode(self):
@@ -290,6 +288,37 @@ class MainWin(QMainWindow):
         self.stateBar.addPermanentWidget(QLabel(stdout))
 
 
+class CompileThread(QObject):
+    result_signal = pyqtSignal(int, float)
+
+    def __init__(self):
+        super(CompileThread, self).__init__()
+
+    def run(self):
+        timer = QTimer()
+        timer.start(60000)
+
+        mainWin.stateBar.showMessage('جاري ترجمة الشفرة...')
+        code = mainWin.tabWin.currentWidget().toPlainText()
+        temp_file = gettempdir()
+
+        with open(os.path.join(temp_file, "temp.alif"), "w", encoding="utf-8") as temporaryFile:
+            temporaryFile.write(code)
+            temporaryFile.close()
+
+        process = QProcess()
+        alifCodeCompile = os.path.join(temp_file, "temp.alif")
+        res = process.execute("alif", [alifCodeCompile])
+        process.kill()
+
+        remine_time = timer.remainingTime()
+        build_time = (60000 - remine_time) / 1000
+        timer.stop()
+
+        self.result_signal.emit(res, build_time)
+        mainWin.thread.quit()
+
+
 class CharCont:
     def __init__(self, MainWin):
         super(CharCont, self).__init__()
@@ -311,7 +340,6 @@ class CharCont:
 
 
 if __name__ == "__main__":
-
     app = QApplication(sys.argv)
     app.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
     app.setFont(QFont('Tajawal', 10))
